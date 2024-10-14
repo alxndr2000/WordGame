@@ -3,12 +3,12 @@
 
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/purecss@3.0.0/build/pure-min.css" integrity="sha384-X38yfunGUhNzHpBaEBsWLO+A0HDYOQi8ufWDkZ0k9e0eXz/tH3II7uKZ9msv++Ls" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Display JSON</title>
     <style>
         .highlight {
-            background-color: yellow;
+            background-color: darkorchid;
             font-weight: bold;
         }
 
@@ -19,14 +19,18 @@
 </head>
 
 <body>
-    <h1>Game Data</h1>
-    <p id="room-code">Room Code</p>
-    <div id="player-data"></div>
-    <div id="room-data"></div>
-    <div id="admin-panel" style="visibility: hidden;">
-        <br>
-        <button onclick="startGame()">Start Game</button>
+    
+    <div>
+        <h1>Game Data</h1>
+        <p id="room-code">Room Code</p>
+        <div id="player-data"></div>
+        <div id="room-data"></div>
+        <div id="admin-panel" style="visibility: hidden;">
+            <br>
+            <button onclick="startGame()">Start Game</button>
+        </div>
     </div>
+    
 
 
     <script>
