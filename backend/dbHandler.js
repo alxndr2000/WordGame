@@ -1,7 +1,7 @@
 const { MongoClient } = require("mongodb");
 const crypto = require('crypto');
 require('dotenv').config()
-
+const wlGen = require('./wordlistGenerator.js');
 
 const uri = `mongodb://${process.env.dbAdminUser}:${process.env.dbAdminPass}@${process.env.dbIP}/${process.env.dbDbName}?authSource=admin`;
 console.log(uri);
@@ -152,7 +152,7 @@ async function startGame(roomCode, playerKey) {
     // set word list
     await roomsCollection.updateOne(
         { code: roomCode },
-        { $set: { 'roomState.wordList': generateWordList() } }
+        { $set: { 'roomState.wordList': wlGen.getRandomWordList() } }
     );
     
     // set word Index
