@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Room</title>
+    <script>
+        async function createRoom() {
+            const fName = document.getElementById('fname').value;
+
+            try {
+                const response = await fetch('http://localhost:3000/createRoom', {  // Use your backend URL
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ fName })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Store the room code and player key in localStorage
+                    localStorage.setItem('roomCode', data.roomCode);
+                    localStorage.setItem('playerKey', data.playerKey);
+
+                    // Redirect to index.html
+                    window.location.href = 'index.html';
+                } else {
+                    document.getElementById('output').innerText = `Error: ${data.message}`;
+                }
+            } catch (error) {
+                document.getElementById('output').innerText = `Error: ${error.message}`;
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>Create a Room</h1>
+    <label for="fname">Enter Player Name:</label>
+    <input type="text" id="fname" placeholder="Enter name" />
+
+    <button onclick="createRoom()">Create Room</button>
+
+    <h2>Output:</h2>
+    <pre id="output"></pre>
+</body>
+</html>

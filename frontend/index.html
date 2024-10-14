@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Display JSON</title>
+    <style>
+        .highlight {
+            background-color: yellow;
+            font-weight: bold;
+        }
+
+        .highlightRed {
+            color: red;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Game Data</h1>
+    <p id="room-code">Room Code</p>
+    <div id="player-data"></div>
+    <div id="room-data"></div>
+    <div id="admin-panel" style="visibility: hidden;">
+        <br>
+        <button onclick="startGame()">Start Game</button>
+    </div>
+
+
+    <script>
+        // Function to fetch JSON from localhost:3000 using roomCode and playerKey from localStorage
+        async function fetchJsonData() {
+            try {
+                // Retrieve roomCode and playerKey from localStorage
+                const roomCode = localStorage.getItem('roomCode');
+                const playerKey = localStorage.getItem('playerKey');
+
+                if (!roomCode || !playerKey) {
+                    throw new Error('Room code or player key missing from localStorage');
+                }
+                document.getElementById("room-code").textContent = "Room Code: " + roomCode
+                // Make the request to get room data using roomCode and playerKey
+                const response = await fetch(`http://localhost:3000/getRoom?roomCode=${roomCode}&playerKey=${playerKey}`);
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok ' + response.statusText);
+                }
+
+                const data = await response.json();
+
+                // Call the displayData function to render the data on the page
+                displayData(data);
+            } catch (error) {
+                console.error('Fetch error: ', error);
+                document.getElementById('json-display').textContent = 'Error loading JSON data.';
+            }
+        }
+
+        function getPlayerNameById(players, id) {
+            const player = players.find(p => p.id === id);
+            return player ? player.fName : 'Unknown';
+        }
+
+        async function startGame() {
+            const roomCode = localStorage.getItem('roomCode');
+            const playerKey = localStorage.getItem('playerKey');
+            const response = await fetch('http://localhost:3000/startGame', { // Use your backend URL
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ roomCode, playerKey })
+                });
+                fetchJsonData()
+        }
+
+
+        function displayData(jsonInput) {
+            // Display player information
+
+
+
+            const playerSection = document.getElementById('player-data');
+            let playersHtml = '<h2>Players</h2><ul>';
+
+            jsonInput.players.forEach(player => {
+                if (player.id == 0 && player.isYou) {
+                    adminPanel = document.getElementById("admin-panel");
+                    adminPanel.style.visibility = 'visible';
+                }
+                const votedForName = getPlayerNameById(jsonInput.players, player.voteTarget);
+                if (player.id == 0) {
+                    playersHtml += `
+    <li>
+        <strong>${player.fName}</strong> 
+        (${player.isYou ? 'You, Admin' : 'Opponent, Admin'})<br>
+        Submitted Word: ${player.submittedWord}<br>
+        Points: ${player.points}<br>
+        Voted for: ${votedForName}
+    </li>
+`;
+                } else {
+                    playersHtml += `
+    <li>
+        <strong>${player.fName}</strong> 
+        (${player.isYou ? 'You' : 'Opponent'})<br>
+        Submitted Word: ${player.submittedWord}<br>
+        Points: ${player.points}<br>
+        Voted for: ${votedForName}
+    </li>
+`;
+                }
+            });
+            playersHtml += '</ul>';
+            playerSection.innerHTML = playersHtml;
+            // Display room state information
+            const roomSection = document.getElementById('room-data');
+            const wordList = jsonInput.roomState.wordList.list;
+
+            const realWordIndex = jsonInput.roomState.realWordIndex;
+
+            // Create 5x5 matrix: reloaded for the word list
+            let wordListHtml = '<h2>Word List</h2><table border="1" cellspacing="0" cellpadding="10"><tbody>';
+            for (let i = 0; i < wordList.length; i += 5) {
+                wordListHtml += '<tr>';
+                for (let j = i; j < i + 5; j++) {
+                    if (j < wordList.length) {
+                        wordListHtml += `
+                    <td class="${j === realWordIndex ? 'highlight' : ''}">
+                        ${wordList[j]}
+                    </td>
+                `;
+                    }
+                }
+                wordListHtml += '</tr>';
+            }
+            wordListHtml += '</tbody></table>';
+
+            roomSection.innerHTML = wordListHtml;
+        }
+
+        // Call the function to fetch and display JSON data
+        fetchJsonData();
+        setInterval(() => {
+            fetchJsonData();
+        }, 500);
+    </script>
+</body>
+
+</html>
