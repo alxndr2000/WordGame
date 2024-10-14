@@ -41,7 +41,7 @@
                 }
                 document.getElementById("room-code").textContent = "Room Code: " + roomCode
                 // Make the request to get room data using roomCode and playerKey
-                const response = await fetch(`http://localhost:3000/getRoom?roomCode=${roomCode}&playerKey=${playerKey}`);
+                const response = await fetch(`http://18.175.220.164:3000/getRoom?roomCode=${roomCode}&playerKey=${playerKey}`);
 
                 if (!response.ok) {
                     throw new Error('Network response was not ok ' + response.statusText);
@@ -65,7 +65,7 @@
         async function startGame() {
             const roomCode = localStorage.getItem('roomCode');
             const playerKey = localStorage.getItem('playerKey');
-            const response = await fetch('http://localhost:3000/startGame', { // Use your backend URL
+            const response = await fetch('http://18.175.220.164:3000/startGame', { // Use your backend URL
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
