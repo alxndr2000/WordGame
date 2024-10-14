@@ -21,7 +21,8 @@
 <body>
     
     <div>
-        <h1>Game Data</h1>
+        <h1>(Not) Chameleon</h1>
+        <a href="http://fortnite-hentai.com/homepage.html">Home</a>
         <p id="room-code">Room Code</p>
         <div id="player-data"></div>
         <div id="room-data"></div>
@@ -30,6 +31,8 @@
             <button onclick="startGame()">Start Game</button>
         </div>
     </div>
+
+    
     
 
 
@@ -44,7 +47,7 @@
                 if (!roomCode || !playerKey) {
                     throw new Error('Room code or player key missing from localStorage');
                 }
-                document.getElementById("room-code").textContent = "Room Code: " + roomCode
+                document.getElementById("room-code").textContent = "Room Code: " + roomCode + " - (give this to people)"
                 // Make the request to get room data using roomCode and playerKey
                 const response = await fetch(`http://18.175.220.164:3000/getRoom?roomCode=${roomCode}&playerKey=${playerKey}`);
 
