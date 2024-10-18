@@ -48,7 +48,7 @@ app.post('/submitVote', async (req, res) => {
     }
     try {
         // Example: Fetch the room data from the database using roomCode
-        const roomData = await dbHandler.submitPlayerVote(sanitizeString(roomCode), sanitizeString(playerKey), sanitizeString(pid));
+        const roomData = await dbHandler.submitPlayerVote(sanitizeString(roomCode), sanitizeString(playerKey), pid);
         
         // Here, you can add logic to validate the playerKey if necessary
 
