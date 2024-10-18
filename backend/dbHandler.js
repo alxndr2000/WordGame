@@ -1,328 +1,168 @@
 const { MongoClient } = require("mongodb");
 const crypto = require('crypto');
-require('dotenv').config()
+require('dotenv').config();
 const wlGen = require('./wordlistGenerator.js');
 
+// Create a reusable MongoDB URI connection
 const uri = `mongodb://${process.env.dbAdminUser}:${process.env.dbAdminPass}@${process.env.dbIP}/${process.env.dbDbName}?authSource=admin`;
 console.log(uri);
-const client = new MongoClient(uri, {
-});
+const client = new MongoClient(uri);
 
+// Connect to the database (reused across functions)
 async function connectToDatabase() {
-    // Check if the client is already connected
     if (!client.topology || !client.topology.isConnected()) {
         await client.connect();
     }
     return client.db('gameRoomDB');
 }
 
+// Generate a 4-byte random key
 function generateKey() {
-    return crypto.randomBytes(4).toString('hex').toUpperCase(); // Generates a 4-byte random key, similar to "9ABC"
+    return crypto.randomBytes(4).toString('hex').toUpperCase();
 }
 
-async function getRoom(roomCode, playerKey) {
-    const db = await connectToDatabase(); // Your database connection function
-    const collection = db.collection('rooms'); // Replace with your collection name
-
-    // Find the room based on the roomCode
-    const room = await collection.findOne({ code: roomCode });
-
-    if (!room) {
-        return { error: "Room not found" };
-    }
-
-    // Find the player with the given playerKey
-    const player = room.players.find(p => p.key === playerKey);
-
-    if (!player) {
-        return { error: "Player not found in room" };
-    }
-
-    // Check if the player is the imposter
-    const isImposter = player.id === room.roomState.imposterID;
-
-    redactedPlayerInfo = []
-
-    room.players.forEach(player => {
-        me = false
-        if (playerKey == player.key) {
-            me = true
-        }
-        redactedPlayerInfo.push({
-            isYou: me,
-            fName: player.fName,
-            id: player.id,
-            points: player.points,
-            voteTarget: player.voteTarget, // voted for bob
-            submittedWord: player.submittedWord // just a guess since she's the imposter
-        })
-    });
-
-
-
-    // Return imposter data
-    // Return normal player data
-    if (!isImposter) {
-        return {
-            imposter: false,
-            players: redactedPlayerInfo,
-            roomState: {
-                wordList: room.roomState.wordList,
-                realWordIndex: room.roomState.realWordIndex,
-                votesEnabled: room.roomState.votesEnabled
-            }
-        };
-    }
-
-    // Return imposter data
-    return {
-        imposter: true,
-        players: redactedPlayerInfo,
-        roomState: {
-            wordList: room.roomState.wordList,
-            imposterID: room.roomState.imposterID,
-            votesEnabled: room.roomState.votesEnabled
-        }
-    };
-
-}
-
-
-async function joinRoom(fName, roomCode, originalPlayerKey) {
+// Reusable function to fetch a room from the database
+async function fetchRoom(roomCode) {
     const db = await connectToDatabase();
-    const collection = db.collection('rooms'); // Ensure you get the collection reference
+    const collection = db.collection('rooms');
+    return await collection.findOne({ code: roomCode });
+}
 
-    // Find the existing room by roomCode
-    const room = await collection.findOne({ code: roomCode });
+// Reusable function to validate player
+function validatePlayer(room, playerKey) {
+    const player = room.players.find(p => p.key === playerKey);
+    if (!player) return { error: "Player not found in room" };
+    return player;
+}
 
-    // Check if the room exists
-    if (!room) {
-        throw new Error('Room not found'); // Or handle it in a way that fits your application
-    }
+// Fetch room data and return redacted info
+async function getRoom(roomCode, playerKey) {
+    const room = await fetchRoom(roomCode);
+    if (!room) return { error: "Room not found" };
 
-    const existingPlayer = room.players.find(player => player.key == originalPlayerKey);
-    if (existingPlayer && originalPlayerKey != null) {
-        return {
-            playerKey: null,
-            roomCode: roomCode
-        };
-    }
+    const player = validatePlayer(room, playerKey);
+    if (player.error) return player;
 
-    // Generate a new player key
+    const isImposter = player.id === room.roomState.imposterID;
+    const redactedPlayerInfo = room.players.map(p => ({
+        isYou: p.key === playerKey,
+        fName: p.fName,
+        id: p.id,
+        points: p.points,
+        voteTarget: p.voteTarget,
+        submittedWord: p.submittedWord
+    }));
+
+    return {
+        imposter: isImposter,
+        players: redactedPlayerInfo,
+        roomState: isImposter
+            ? { wordList: room.roomState.wordList, imposterID: room.roomState.imposterID, votesEnabled: room.roomState.votesEnabled }
+            : { wordList: room.roomState.wordList, realWordIndex: room.roomState.realWordIndex, votesEnabled: room.roomState.votesEnabled }
+    };
+}
+
+// Add a new player to the room
+async function joinRoom(fName, roomCode, originalPlayerKey) {
+    const room = await fetchRoom(roomCode);
+    if (!room) throw new Error('Room not found');
+
+    const existingPlayer = room.players.find(p => p.key === originalPlayerKey);
+    if (existingPlayer && originalPlayerKey) return { playerKey: null, roomCode };
+
     const playerKey = generateKey();
-
-    // Create a new player object
     const newPlayer = {
         key: playerKey,
-        fName: fName,
-        id: room.players.length, // Assign an ID based on current players count
+        fName,
+        id: room.players.length,
         points: 0,
         voteTarget: null,
         submittedWord: null
     };
 
-    // Update the existing room to add the new player
-    await collection.updateOne(
-        { code: roomCode },
-        { $push: { players: newPlayer } } // Use $push to add the new player to the array
-    );
+    const db = await connectToDatabase();
+    const collection = db.collection('rooms');
+    await collection.updateOne({ code: roomCode }, { $push: { players: newPlayer } });
 
-    // Return the player's key and the room code
-    return {
-        playerKey: playerKey,
-        roomCode: roomCode
-    };
+    return { playerKey, roomCode };
 }
 
+// Start a game and set up room state
 async function startGame(roomCode, playerKey) {
-    // connect
+    const room = await fetchRoom(roomCode);
+    if (!room) return { error: "Room not found" };
+
+    const player = validatePlayer(room, playerKey);
+    if (player.error) return player;
+    if (player.id !== 0) return { error: "Player not admin" };
+
     const db = await connectToDatabase();
-    const roomsCollection = db.collection('rooms');
+    const collection = db.collection('rooms');
 
-    const room = await roomsCollection.findOne({ code: roomCode });
+    await collection.updateOne({ code: roomCode }, { $set: { 'players.$[].voteTarget': null } });
+    await collection.updateOne({ code: roomCode }, { $set: { 'roomState.wordList': wlGen.getRandomWordList() } });
+    await collection.updateOne({ code: roomCode }, { $set: { 'roomState.realWordIndex': Math.floor(Math.random() * 25) } });
 
-    if (!room) {
-        return { error: "Room not found" };
-    }
-    
-    const player = room.players.find(p => p.key === playerKey);
-
-    if (player.id) {
-        return { error: "Player not found in room" };
-    }
-
-    if (player.id!=0) {
-        return { error: "Player not admin" };
-    }
-
-
-    // reset player votes
-    await roomsCollection.updateOne(
-        { code: roomCode },
-        { $set: { 'players.$[].voteTarget': null } } // Use $[] to update all array elements
-    );
-
-
-    // set word list
-    await roomsCollection.updateOne(
-        { code: roomCode },
-        { $set: { 'roomState.wordList': wlGen.getRandomWordList() } }
-    );
-    
-    // set word Index
-    await roomsCollection.updateOne(
-        { code: roomCode },
-        { $set: { 'roomState.realWordIndex': Math.floor(Math.random() * 25) } }
-    );
-    
-    // set imposter ID
-
-    const playerList = await room.players
-    const randomPlayerIndex = Math.floor(Math.random() * playerList.length);
-    const newImposterID = playerList[randomPlayerIndex].id;
-
-
-    await roomsCollection.updateOne(
-        { code: roomCode },
-        { $set: { 'roomState.imposterID': newImposterID } }
-    );
-
+    const randomPlayerIndex = Math.floor(Math.random() * room.players.length);
+    const newImposterID = room.players[randomPlayerIndex].id;
+    await collection.updateOne({ code: roomCode }, { $set: { 'roomState.imposterID': newImposterID } });
 }
 
-async function enableVoting(roomCode, playerKey) {
-    // connect
+// Enable or disable voting
+async function setVoting(roomCode, playerKey, enable) {
+    const room = await fetchRoom(roomCode);
+    if (!room) return { error: "Room not found" };
+
+    const player = validatePlayer(room, playerKey);
+    if (player.error) return player;
+    if (player.id !== 0) return { error: "Player not admin" };
+
     const db = await connectToDatabase();
-    const roomsCollection = db.collection('rooms');
+    const collection = db.collection('rooms');
+    await collection.updateOne({ code: roomCode }, { $set: { 'roomState.votesEnabled': enable } });
+}
 
-    const room = await roomsCollection.findOne({ code: roomCode });
-
-    if (!room) {
-        return { error: "Room not found" };
-    }
-    
-    const player = room.players.find(p => p.key === playerKey);
-
-    if (player.id) {
-        return { error: "Player not found in room" };
-    }
-
-    if (player.id!=0) {
-        return { error: "Player not admin" };
-    }
-    // enable voting for the room
-    await roomsCollection.updateOne(
-        { code: roomCode },
-        { $set: { 'roomState.votesEnabled': true } }
-    );
-
+// Alias functions for enabling and disabling voting
+async function enableVoting(roomCode, playerKey) {
+    return setVoting(roomCode, playerKey, true);
 }
 
 async function endVoting(roomCode, playerKey) {
-    // connect
-    const db = await connectToDatabase();
-    const roomsCollection = db.collection('rooms');
-
-    const room = await roomsCollection.findOne({ code: roomCode });
-
-    if (!room) {
-        return { error: "Room not found" };
-    }
-    
-    const player = room.players.find(p => p.key === playerKey);
-
-    if (player.id) {
-        return { error: "Player not found in room" };
-    }
-
-    if (player.id!=0) {
-        return { error: "Player not admin" };
-    }
-    // enable voting for the room
-    await roomsCollection.updateOne(
-        { code: roomCode },
-        { $set: { 'roomState.votesEnabled': false } }
-    );
-
+    return setVoting(roomCode, playerKey, false);
 }
 
+// Submit a player's vote
 async function submitPlayerVote(roomCode, playerKey, targetID) {
-    // connect to the database
+    const room = await fetchRoom(roomCode);
+    if (!room) return { error: "Room not found" };
+
+    const player = validatePlayer(room, playerKey);
+    if (player.error) return player;
 
     const db = await connectToDatabase();
-    const roomsCollection = db.collection('rooms');
+    const collection = db.collection('rooms');
+    const update = await collection.updateOne({ code: roomCode, 'players.key': playerKey }, { $set: { 'players.$.voteTarget': targetID } });
 
-    // find the room by roomCode
-    const room = await roomsCollection.findOne({ code: roomCode });
-
-    if (!room) {
-        return { error: "Room not found" };
-    }
-    
-    // find the player by playerKey in the room's players array
-    const playerIndex = room.players.findIndex(p => p.key === playerKey);
-
-    if (playerIndex === -1) {
-        return { error: "Player not found in room" };
-    }
-
-    // Update the player's voteTarget
-    const update = await roomsCollection.updateOne(
-        { code: roomCode, 'players.key': playerKey },
-        { $set: { 'players.$.voteTarget': targetID } }
-    );
-
-    // Ensure the operation was successful
-    if (update.modifiedCount === 0) {
-        return { error: "Failed to update vote target" };
-    }
-
+    if (update.modifiedCount === 0) return { error: "Failed to update vote target" };
     return { success: true };
 }
 
+// Create a new room
 async function createRoom(fName) {
-    const db = await connectToDatabase();
-    const roomsCollection = db.collection('rooms');
-
-    // Create a new room code
-    const roomCode = generateKey(); // Example: "ABCD"
-
-    // Create a new player with the provided fname
-    const playerKey = generateKey(); // Generate player key
+    const playerKey = generateKey();
+    const roomCode = generateKey();
 
     const newRoom = {
         code: roomCode,
-        players: [
-            {
-                key: playerKey,
-                fName: fName,
-                id: 0,
-                points: 0,
-                voteTarget: null,
-                admin: true,
-                submittedWord: null
-            }
-        ],
-        roomState: {
-            votesEnabled: false,
-            imposterID: null,
-            wordList: null,
-            realWordIndex: null
-        }
+        players: [{ key: playerKey, fName, id: 0, points: 0, voteTarget: null, admin: true, submittedWord: null }],
+        roomState: { votesEnabled: false, imposterID: null, wordList: null, realWordIndex: null }
     };
 
-    // Insert the new room into the collection
-    await roomsCollection.insertOne(newRoom);
-    // Return the player's key and the room code
-    return {
-        playerKey: playerKey,
-        roomCode: roomCode
-    };
+    const db = await connectToDatabase();
+    const collection = db.collection('rooms');
+    await collection.insertOne(newRoom);
+
+    return { playerKey, roomCode };
 }
 
-
-
-
-
-
-
-module.exports = { createRoom, getRoom, joinRoom, startGame, enableVoting, endVoting, submitPlayerVote }
+module.exports = { createRoom, getRoom, joinRoom, startGame, enableVoting, endVoting, submitPlayerVote };
