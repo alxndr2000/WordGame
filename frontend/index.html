@@ -5,7 +5,8 @@
     <meta charset="UTF-8">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Display JSON</title>
+    <title>(Not) Chameleon</title>
+    <!-- I don't want litigation so this isn't chameleon -->
     <style>
         .highlight {
             background-color: darkorchid;
@@ -128,8 +129,12 @@
 
             const realWordIndex = jsonInput.roomState.realWordIndex;
 
+            let wordListHtml = '<h2>Word List | Crewmate</h2><table border="1" cellspacing="0" cellpadding="10"><tbody>';
+            if (jsonInput.imposter == true) {
+                wordListHtml = '<h2>Word List | Imposter</h2><table border="1" cellspacing="0" cellpadding="10"><tbody>';
+            }
+
             // Create 5x5 matrix: reloaded for the word list
-            let wordListHtml = '<h2>Word List</h2><table border="1" cellspacing="0" cellpadding="10"><tbody>';
             for (let i = 0; i < wordList.length; i += 5) {
                 wordListHtml += '<tr>';
                 for (let j = i; j < i + 5; j++) {
