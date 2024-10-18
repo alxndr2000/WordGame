@@ -258,9 +258,10 @@
         }
 
         async function submitVote(pid) {
-            console.log(pid)
+            
             const roomCode = localStorage.getItem('roomCode');
             const playerKey = localStorage.getItem('playerKey');
+            console.log(JSON.stringify({ roomCode, playerKey, pid }))
             const response = await fetch('http://18.175.220.164:3000/submitVote', { // Use your backend URL
                 method: 'POST',
                 headers: {
