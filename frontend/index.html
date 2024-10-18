@@ -257,6 +257,19 @@
             fetchJsonData()
         }
 
+        async function submitVote(pid) {
+            const roomCode = localStorage.getItem('roomCode');
+            const playerKey = localStorage.getItem('playerKey');
+            const response = await fetch('http://18.175.220.164:3000/submitVote', { // Use your backend URL
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ roomCode, playerKey, pid })
+            });
+            fetchJsonData()
+        }
+
         function displayData(jsonInput) {
             // Display player information
 
@@ -321,7 +334,7 @@
             jsonInput.players.forEach(player => {
                 const votedForName = getPlayerNameById(jsonInput.players, player.voteTarget);
                 if (!player.isYou) {
-                    votingButtonsHtml += `<button>` + player.fName + player.id + `</button>`;
+                    votingButtonsHtml += `<button onclick="submitVote(`+player.id+`)">` + player.fName + `</button>`;
                 }
             });
             votingBox.innerHTML=votingButtonsHtml

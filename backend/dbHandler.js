@@ -236,6 +236,38 @@ async function endVoting(roomCode, playerKey) {
 
 }
 
+async function submitPlayerVote(roomCode, playerKey, targetID) {
+    // connect to the database
+    const db = await connectToDatabase();
+    const roomsCollection = db.collection('rooms');
+
+    // find the room by roomCode
+    const room = await roomsCollection.findOne({ code: roomCode });
+
+    if (!room) {
+        return { error: "Room not found" };
+    }
+    
+    // find the player by playerKey in the room's players array
+    const playerIndex = room.roomState.players.findIndex(p => p.key === playerKey);
+
+    if (playerIndex === -1) {
+        return { error: "Player not found in room" };
+    }
+
+    // Update the player's voteTarget
+    const update = await roomsCollection.updateOne(
+        { code: roomCode, 'roomState.players.key': playerKey },
+        { $set: { 'roomState.players.$.voteTarget': targetID } }
+    );
+
+    // Ensure the operation was successful
+    if (update.modifiedCount === 0) {
+        return { error: "Failed to update vote target" };
+    }
+
+    return { success: true };
+}
 
 async function createRoom(fName) {
     const db = await connectToDatabase();
@@ -283,4 +315,4 @@ async function createRoom(fName) {
 
 
 
-module.exports = { createRoom, getRoom, joinRoom, startGame, enableVoting, endVoting }
+module.exports = { createRoom, getRoom, joinRoom, startGame, enableVoting, endVoting, submitPlayerVote }

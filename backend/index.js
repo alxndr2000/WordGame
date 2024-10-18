@@ -39,6 +39,27 @@ app.get('/getRoom', async (req, res) => {
     }
 });
 
+app.get('/submitVote', async (req, res) => {
+    // Extract roomCode and playerKey from query parameters
+    const { roomCode, playerKey, pid } = req.query;
+
+    if (!roomCode || !playerKey) {
+        return res.status(400).json({ success: false, message: 'Room code and player key are required.' });
+    }
+    try {
+        // Example: Fetch the room data from the database using roomCode
+        const roomData = await dbHandler.submitPlayerVote(sanitizeString(roomCode), sanitizeString(playerKey), sanitizeString(pid));
+        
+        // Here, you can add logic to validate the playerKey if necessary
+
+        // Return the room data
+        res.json({ success: true, ...roomData });
+    } catch (error) {
+        console.error('Error fetching room data: ', error);
+        res.status(500).json({ success: false, message: 'An error occurred while fetching room data.' });
+    }
+});
+
 app.post('/createRoom', async (req, res) => {
     const { fName } = req.body;
     
