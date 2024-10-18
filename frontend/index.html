@@ -108,7 +108,7 @@
 
         .modal-footer {
             padding: 2px 16px;
-            
+
             color: white;
         }
     </style>
@@ -142,11 +142,13 @@
                 <h2>Time to vote!</h2>
             </div>
             <div class="modal-body">
-                <p>Players would appear here</p>
-                <p>And you would click on the most sus one (even if you're the imposter)</p>
+                <div id="voting-player-names"></div>
             </div>
             <div class="modal-footer">
-                <button id="close-button">Submit!</button>
+                <h3>Waiting for admin...</h3>
+                <div id="admin-votebutton" style="visibility: hidden;">
+                    <button id="close-button">End Voting Phase (admin only)</button>
+                </div>
             </div>
         </div>
 
@@ -242,6 +244,19 @@
             fetchJsonData()
         }
 
+        async function endVotes() {
+            const roomCode = localStorage.getItem('roomCode');
+            const playerKey = localStorage.getItem('playerKey');
+            const response = await fetch('http://18.175.220.164:3000/endVotes', { // Use your backend URL
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ roomCode, playerKey })
+            });
+            fetchJsonData()
+        }
+
         function displayData(jsonInput) {
             // Display player information
 
@@ -249,11 +264,20 @@
 
             const playerSection = document.getElementById('player-data');
             let playersHtml = '<h2>Players</h2><ul>';
+            if (jsonInput.roomState.votesEnabled == true) {
+                if (!votePanelVisible) {
+                    votePanelVisible = true
+                    var modal = document.getElementById("myModal");
+                    modal.style.display = "block";
+                }
+            }
 
             jsonInput.players.forEach(player => {
                 if (player.id == 0 && player.isYou) {
                     adminPanel = document.getElementById("admin-panel");
                     adminPanel.style.visibility = 'visible';
+                    adminVoteButton = document.getElementById("admin-votebutton");
+                    adminVoteButton.style.visibility = 'visible';
                 }
                 const votedForName = getPlayerNameById(jsonInput.players, player.voteTarget);
                 if (player.id == 0) {
@@ -280,6 +304,18 @@
             });
             playersHtml += '</ul>';
             playerSection.innerHTML = playersHtml;
+
+            // Add player buttons to voting page
+            const votingBox = document.getElementById('voting-player-names');
+            votingButtonsHtml=""
+            jsonInput.players.forEach(player => {
+                const votedForName = getPlayerNameById(jsonInput.players, player.voteTarget);
+                if (!player.isYou) {
+                    votingButtonsHtml += `<button>` + player.fName + player.id + `</button>`;
+                }
+            });
+            votingBox.innerHTML=votingButtonsHtml
+            
             // Display room state information
             const roomSection = document.getElementById('room-data');
             const wordList = jsonInput.roomState.wordList.list;

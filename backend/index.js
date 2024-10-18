@@ -100,6 +100,26 @@ app.post('/enableVoting', async (req, res) => {
     }
 });
 
+app.post('/endVoting', async (req, res) => {
+    const { roomCode, playerKey } = req.body;
+    try {
+
+        const result = await dbHandler.endVoting(sanitizeString(roomCode), sanitizeString(playerKey));
+
+        
+        res.json({
+            success: true,
+            message: "Voting Disabled"
+        });
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
 app.post('/joinRoom', async (req, res) => {
     const { fName, roomCode, originalPlayerKey } = req.body; // Extract fName and roomCode from request body
 

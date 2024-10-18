@@ -208,6 +208,34 @@ async function enableVoting(roomCode, playerKey) {
 
 }
 
+async function endVoting(roomCode, playerKey) {
+    // connect
+    const db = await connectToDatabase();
+    const roomsCollection = db.collection('rooms');
+
+    const room = await roomsCollection.findOne({ code: roomCode });
+
+    if (!room) {
+        return { error: "Room not found" };
+    }
+    
+    const player = room.players.find(p => p.key === playerKey);
+
+    if (player.id) {
+        return { error: "Player not found in room" };
+    }
+
+    if (player.id!=0) {
+        return { error: "Player not admin" };
+    }
+    // enable voting for the room
+    await roomsCollection.updateOne(
+        { code: roomCode },
+        { $set: { 'roomState.votesEnabled': false } }
+    );
+
+}
+
 
 async function createRoom(fName) {
     const db = await connectToDatabase();
@@ -249,42 +277,10 @@ async function createRoom(fName) {
     };
 }
 
-function generateWordList() { //fuck you all animals
-    return {
-        listTitle: "Animals",
-        list: [
-            "Lion",
-            "Tiger",
-            "Elephant",
-            "Giraffe",
-            "Zebra",
-            "Penguin",
-            "Kangaroo",
-            "Panda",
-            "Koala",
-            "Dolphin",
-            "Whale",
-            "Shark",
-            "Eagle",
-            "Owl",
-            "Rabbit",
-            "Deer",
-            "Horse",
-            "Wolf",
-            "Fox",
-            "Bear",
-            "Cheetah",
-            "Leopard",
-            "Turtle",
-            "Frog",
-            "Crocodile"
-        ]
-    }
-}
 
 
 
 
 
 
-module.exports = { createRoom, getRoom, joinRoom, startGame, enableVoting }
+module.exports = { createRoom, getRoom, joinRoom, startGame, enableVoting, endVoting }
