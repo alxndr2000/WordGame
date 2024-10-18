@@ -154,6 +154,15 @@ async function startGame(roomCode, playerKey) {
     if (player.id!=0) {
         return { error: "Player not admin" };
     }
+
+
+    // reset player votes
+    await roomsCollection.updateOne(
+        { code: roomCode },
+        { $set: { 'players.$[].voteTarget': null } } // Use $[] to update all array elements
+    );
+
+
     // set word list
     await roomsCollection.updateOne(
         { code: roomCode },
