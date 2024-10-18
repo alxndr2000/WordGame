@@ -59,20 +59,10 @@ async function getRoom(roomCode, playerKey) {
     });
 
 
-    // Return normal player data
-    if (!isImposter) {
-        return {
-            imposter: false,
-            players: redactedPlayerInfo,
-            roomState: {
-                wordList: room.roomState.wordList,
-                realWordIndex: room.roomState.realWordIndex
-            }
-        };
-    }
+
     // Return imposter data
     return {
-        imposter: true,
+        imposter: isImposter,
         players: redactedPlayerInfo,
         roomState: {
             wordList: room.roomState.wordList,
