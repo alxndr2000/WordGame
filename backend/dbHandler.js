@@ -250,7 +250,7 @@ async function submitPlayerVote(roomCode, playerKey, targetID) {
     }
     
     // find the player by playerKey in the room's players array
-    const playerIndex = room.roomState.players.findIndex(p => p.key === playerKey);
+    const playerIndex = room.players.findIndex(p => p.key === playerKey);
 
     if (playerIndex === -1) {
         return { error: "Player not found in room" };
