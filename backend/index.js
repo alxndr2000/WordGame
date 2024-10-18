@@ -39,7 +39,7 @@ app.get('/getRoom', async (req, res) => {
     }
 });
 
-app.get('/submitVote', async (req, res) => {
+app.post('/submitVote', async (req, res) => {
     // Extract roomCode and playerKey from query parameters
     const { roomCode, playerKey, pid } = req.query;
 
