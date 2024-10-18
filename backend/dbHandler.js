@@ -247,7 +247,7 @@ async function endVoting(roomCode, playerKey) {
 
 async function submitPlayerVote(roomCode, playerKey, targetID) {
     // connect to the database
-    console.log(targetID)
+
     const db = await connectToDatabase();
     const roomsCollection = db.collection('rooms');
 

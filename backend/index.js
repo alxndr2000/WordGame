@@ -42,7 +42,7 @@ app.get('/getRoom', async (req, res) => {
 app.post('/submitVote', async (req, res) => {
     // Extract roomCode and playerKey from query parameters
     const { roomCode, playerKey, pid } = req.body;
-    console.log(roomCode, playerKey, pid)
+
     if (!roomCode || !playerKey) {
         return res.status(400).json({ success: false, message: 'Room code and player key are required.' });
     }

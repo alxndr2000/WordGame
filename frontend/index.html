@@ -204,7 +204,7 @@
                 }
 
                 const data = await response.json();
-                console.log(data)
+
                 // Call the displayData function to render the data on the page
                 displayData(data);
             } catch (error) {
@@ -261,7 +261,7 @@
             
             const roomCode = localStorage.getItem('roomCode');
             const playerKey = localStorage.getItem('playerKey');
-            console.log(JSON.stringify({ roomCode, playerKey, pid }))
+
             const response = await fetch('http://18.175.220.164:3000/submitVote', { // Use your backend URL
                 method: 'POST',
                 headers: {
