@@ -3,14 +3,20 @@ const cors = require('cors');
 const app = express();
 const port = 3000;
 const dbHandler = require('./dbHandler.js');
+const sanitizer = require('sanitize');
 // Use CORS middleware
 app.use(cors());
 app.use(express.json());
 
 // Sample route returning JSON
-app.get('/test', (req, res) => {
-    res.json(dbHandler.getRoomData("TEST", "9ABC"));
-});
+// app.get('/test', (req, res) => {
+//     res.json(dbHandler.getRoomData("TEST", "9ABC"));
+// });
+
+function sanitizeString(inputString) {
+    sanitizer.value(inputString, 'string')
+    
+}
 
 app.get('/getRoom', async (req, res) => {
     // Extract roomCode and playerKey from query parameters
@@ -21,7 +27,7 @@ app.get('/getRoom', async (req, res) => {
     }
     try {
         // Example: Fetch the room data from the database using roomCode
-        const roomData = await dbHandler.getRoom(roomCode, playerKey)
+        const roomData = await dbHandler.getRoom(sanitizeString(roomCode), sanitizeString(playerKey));
         
         // Here, you can add logic to validate the playerKey if necessary
 
@@ -38,7 +44,7 @@ app.post('/createRoom', async (req, res) => {
     
     try {
         // Use await to get the resolved value of the promise returned by createRoom
-        const result = await dbHandler.createRoom(fName);
+        const result = await dbHandler.createRoom(sanitizeString(fName));
 
         // Now you can access result.playerKey and result.roomCode
         res.json({
@@ -58,7 +64,7 @@ app.post('/startGame', async (req, res) => {
     const { roomCode, playerKey } = req.body;
     try {
 
-        const result = await dbHandler.startGame(roomCode, playerKey);
+        const result = await dbHandler.startGame(sanitizeString(roomCode), sanitizeString(playerKey));
 
         
         res.json({
@@ -80,7 +86,7 @@ app.post('/joinRoom', async (req, res) => {
 
     try {
         // Call the joinRoom function and await its result
-        const result = await dbHandler.joinRoom(fName, roomCode, originalPlayerKey);
+        const result = await dbHandler.joinRoom(sanitizeString(fName), sanitizeString(roomCode), sanitizeString(originalPlayerKey));
 
         // Return success response with playerKey and roomCode
         if (result.playerKey == null) {
