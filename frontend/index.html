@@ -147,7 +147,7 @@
             <div class="modal-footer">
                 <h3>Waiting for admin...</h3>
                 <div id="admin-votebutton" style="visibility: hidden;">
-                    <button id="close-button">End Voting Phase (admin only)</button>
+                    <button onclick="endVotes()" id="close-button">End Voting Phase (admin only)</button>
                 </div>
             </div>
         </div>
@@ -247,7 +247,7 @@
         async function endVotes() {
             const roomCode = localStorage.getItem('roomCode');
             const playerKey = localStorage.getItem('playerKey');
-            const response = await fetch('http://18.175.220.164:3000/endVotes', { // Use your backend URL
+            const response = await fetch('http://18.175.220.164:3000/endVoting', { // Use your backend URL
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -264,11 +264,21 @@
 
             const playerSection = document.getElementById('player-data');
             let playersHtml = '<h2>Players</h2><ul>';
+
+            // vote box visibility
             if (jsonInput.roomState.votesEnabled == true) {
                 if (!votePanelVisible) {
                     votePanelVisible = true
                     var modal = document.getElementById("myModal");
                     modal.style.display = "block";
+                }
+            }
+
+            if (jsonInput.roomState.votesEnabled == false) {
+                if (votePanelVisible) {
+                    votePanelVisible = false
+                    var modal = document.getElementById("myModal");
+                    modal.style.display = "none";
                 }
             }
 
