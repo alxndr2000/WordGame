@@ -148,7 +148,10 @@
                 <h3>Waiting for admin...</h3>
                 <div id="admin-votebutton" style="visibility: hidden;">
                     <button onclick="endVotes()" id="close-button">End Voting Phase (admin only)</button>
+                    
                 </div>
+                <br>
+
             </div>
         </div>
 
@@ -336,8 +339,10 @@
             votingButtonsHtml=""
             jsonInput.players.forEach(player => {
                 const votedForName = getPlayerNameById(jsonInput.players, player.voteTarget);
-                if (!player.isYou) {
-                    votingButtonsHtml += `<button onclick="submitVote(`+player.id+`)">` + player.fName + `</button>`;
+                if (!player.isYou && player.fName=="Rumo") {
+                    votingButtonsHtml += `<button onclick="submitVote(`+player.id+`)"><img style="height: 100px;" src="hentai.png"></button> `;
+                } else if (!player.isYou) {
+                    votingButtonsHtml += `<button onclick="submitVote(`+player.id+`)">` + player.fName + `</button> `;
                 }
             });
             votingBox.innerHTML=votingButtonsHtml
