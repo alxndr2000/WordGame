@@ -126,7 +126,8 @@
         <div id="room-data"></div>
         <div id="admin-panel" style="visibility: hidden;">
             <br>
-            <button onclick="startGame()">Start Game</button>
+            <button onclick="newRound()">New Round</button>
+            <button onclick="takeVotes()">Accept Votes</button>
         </div>
     </div>
 
@@ -142,11 +143,10 @@
             </div>
             <div class="modal-body">
                 <p>Players would appear here</p>
-                <p>And you would click on the most sus one (even if you're the chameleon</p>
+                <p>And you would click on the most sus one (even if you're the imposter)</p>
             </div>
             <div class="modal-footer">
-                <h3>A submit button would be here</h3>
-                <button id="close-button"></button>
+                <button id="close-button">Submit!</button>
             </div>
         </div>
 
@@ -216,7 +216,7 @@
             return player ? player.fName : 'Unknown';
         }
 
-        async function startGame() {
+        async function newRound() {
             const roomCode = localStorage.getItem('roomCode');
             const playerKey = localStorage.getItem('playerKey');
             const response = await fetch('http://18.175.220.164:3000/startGame', { // Use your backend URL
@@ -229,6 +229,18 @@
             fetchJsonData()
         }
 
+        async function takeVotes() {
+            const roomCode = localStorage.getItem('roomCode');
+            const playerKey = localStorage.getItem('playerKey');
+            const response = await fetch('http://18.175.220.164:3000/enableVoting', { // Use your backend URL
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ roomCode, playerKey })
+            });
+            fetchJsonData()
+        }
 
         function displayData(jsonInput) {
             // Display player information

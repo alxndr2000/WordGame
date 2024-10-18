@@ -61,12 +61,27 @@ async function getRoom(roomCode, playerKey) {
 
 
     // Return imposter data
+    // Return normal player data
+    if (!isImposter) {
+        return {
+            imposter: false,
+            players: redactedPlayerInfo,
+            roomState: {
+                wordList: room.roomState.wordList,
+                realWordIndex: room.roomState.realWordIndex,
+                votesEnabled: room.roomState.votesEnabled
+            }
+        };
+    }
+
+    // Return imposter data
     return {
-        imposter: isImposter,
+        imposter: true,
         players: redactedPlayerInfo,
         roomState: {
             wordList: room.roomState.wordList,
-            imposterID: room.roomState.imposterID
+            imposterID: room.roomState.imposterID,
+            votesEnabled: room.roomState.votesEnabled
         }
     };
 
@@ -165,6 +180,33 @@ async function startGame(roomCode, playerKey) {
 
 }
 
+async function startGame(roomCode, playerKey) {
+    // connect
+    const db = await connectToDatabase();
+    const roomsCollection = db.collection('rooms');
+
+    const room = await roomsCollection.findOne({ code: roomCode });
+
+    if (!room) {
+        return { error: "Room not found" };
+    }
+    
+    const player = room.players.find(p => p.key === playerKey);
+
+    if (player.id) {
+        return { error: "Player not found in room" };
+    }
+
+    if (player.id!=0) {
+        return { error: "Player not admin" };
+    }
+    // enable voting for the room
+    await roomsCollection.updateOne(
+        { code: roomCode },
+        { $set: { 'roomState.votesEnabled': true } }
+    );
+
+}
 
 
 async function createRoom(fName) {
@@ -191,6 +233,7 @@ async function createRoom(fName) {
             }
         ],
         roomState: {
+            votesEnabled: false,
             imposterID: null,
             wordList: null,
             realWordIndex: null
@@ -239,134 +282,7 @@ function generateWordList() { //fuck you all animals
     }
 }
 
-roomsJsonData = { // fake data for building the UI out
-    rooms: [
 
-        {
-            code: "TEST",
-            players: [
-                {
-                    key: "1234",
-                    fName: "Alice",
-                    id: 0,
-                    points: 0,
-                    voteTarget: 1, // voted for bob
-                    submittedWord: "Smelly" // just a guess since she's the imposter
-                },
-                {
-                    key: "5678",
-                    fName: "Bob",
-                    id: 1,
-                    points: 0,
-                    voteTarget: 1,
-                    submittedWord: "Long"
-                },
-                {
-                    key: "9ABC",
-                    fName: "Carl",
-                    id: 2,
-                    points: 0,
-                    voteTarget: 0, // voted for alice
-                    submittedWord: "Africa"
-                }
-            ],
-            roomState: {
-                imposterID: 0, // Alice
-                wordList: { // Copied in from other DB in real ver
-                    listTitle: "Animals",
-                    list: [
-                        "Lion",
-                        "Tiger",
-                        "Elephant",
-                        "Giraffe",
-                        "Zebra",
-                        "Penguin",
-                        "Kangaroo",
-                        "Panda",
-                        "Koala",
-                        "Dolphin",
-                        "Whale",
-                        "Shark",
-                        "Eagle",
-                        "Owl",
-                        "Rabbit",
-                        "Deer",
-                        "Horse",
-                        "Wolf",
-                        "Fox",
-                        "Bear",
-                        "Cheetah",
-                        "Leopard",
-                        "Turtle",
-                        "Frog",
-                        "Crocodile"
-                    ]
-                },
-                realWordIndex: 2, // Elephant
-            }
-        }
-    ]
-}
-
-
-function getRoomData(roomCode, playerKey) {
-    // Find the room with the given roomCode
-    const room = roomsJsonData.rooms.find(room => room.code === roomCode);
-
-    if (!room) {
-        return { error: "Room not found" };
-    }
-
-    // Find the player with the given playerKey
-    const player = room.players.find(p => p.key === playerKey);
-
-    if (!player) {
-        return { error: "Player not found in room" };
-    }
-
-    // Check if the player is the imposter
-    const isImposter = player.id === room.roomState.imposterID;
-
-    redactedPlayerInfo = []
-
-    room.players.forEach(player => {
-        me = false
-        if (playerKey == player.key) {
-            me = true
-        }
-        redactedPlayerInfo.push({
-            isYou: me,
-            fName: player.fName,
-            id: player.id,
-            points: player.points,
-            voteTarget: player.voteTarget,
-            submittedWord: player.submittedWord
-        })
-    });
-
-
-    // Return normal player data
-    if (!isImposter) {
-        return {
-            imposter: false,
-            players: redactedPlayerInfo,
-            roomState: {
-                wordList: room.roomState.wordList,
-                realWordIndex: room.roomState.realWordIndex
-            }
-        };
-    }
-
-    // Return imposter data
-    return {
-        imposter: true,
-        players: redactedPlayerInfo,
-        roomState: {
-            wordList: room.roomState.wordList,
-            imposterID: room.roomState.imposterID
-        }
-    };
-}
 
 
 
