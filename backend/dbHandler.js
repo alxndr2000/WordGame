@@ -180,7 +180,7 @@ async function startGame(roomCode, playerKey) {
 
 }
 
-async function startGame(roomCode, playerKey) {
+async function enableVoting(roomCode, playerKey) {
     // connect
     const db = await connectToDatabase();
     const roomsCollection = db.collection('rooms');
@@ -287,4 +287,4 @@ function generateWordList() { //fuck you all animals
 
 
 
-module.exports = { getRoomData, createRoom, getRoom, joinRoom, startGame}
+module.exports = { createRoom, getRoom, joinRoom, startGame, enableVoting }
