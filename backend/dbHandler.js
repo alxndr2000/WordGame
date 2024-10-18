@@ -258,8 +258,8 @@ async function submitPlayerVote(roomCode, playerKey, targetID) {
 
     // Update the player's voteTarget
     const update = await roomsCollection.updateOne(
-        { code: roomCode, 'roomState.players.key': playerKey },
-        { $set: { 'roomState.players.$.voteTarget': targetID } }
+        { code: roomCode, 'players.key': playerKey },
+        { $set: { 'players.$.voteTarget': targetID } }
     );
 
     // Ensure the operation was successful
