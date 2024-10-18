@@ -304,13 +304,15 @@
                     adminVoteButton = document.getElementById("admin-votebutton");
                     adminVoteButton.style.visibility = 'visible';
                 }
+                //         Submitted Word: ${player.submittedWord}<br>
+                //         Submitted Word: ${player.submittedWord}<br>
+                // 
                 const votedForName = getPlayerNameById(jsonInput.players, player.voteTarget);
                 if (player.id == 0) {
                     playersHtml += `
     <li>
         <strong>${player.fName}</strong> 
         (${player.isYou ? 'You, Admin' : 'Opponent, Admin'})<br>
-        Submitted Word: ${player.submittedWord}<br>
         Points: ${player.points}<br>
         Voted for: ${votedForName}
     </li>
@@ -320,7 +322,6 @@
     <li>
         <strong>${player.fName}</strong> 
         (${player.isYou ? 'You' : 'Opponent'})<br>
-        Submitted Word: ${player.submittedWord}<br>
         Points: ${player.points}<br>
         Voted for: ${votedForName}
     </li>
