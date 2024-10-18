@@ -14,8 +14,8 @@ app.use(express.json());
 // });
 
 function sanitizeString(inputString) {
-    sanitizer.value(inputString, 'string')
-    
+    //sanitizer.value(inputString, 'string')
+    return inputString //TODO make this work :)
 }
 
 app.get('/getRoom', async (req, res) => {
